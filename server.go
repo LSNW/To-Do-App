@@ -4,20 +4,21 @@ import (
 	"github.com/gofiber/fiber/v2"
   	"gorm.io/driver/postgres"
  	"gorm.io/gorm"
+	//"fmt"
 )
 
 type User struct {
 	gorm.Model
-	login string
-	password string
+	Login string
+	Password string
 }
 
 type ToDo struct {
 	gorm.Model
-	task string
-	assignment string
-	status string
-	delete string
+	Task string
+	Assignment string
+	Status string
+	Delete string
 }
 
 func main() {
@@ -27,20 +28,26 @@ func main() {
 	if err != nil {
 		panic("")
 	}
+
 	db.AutoMigrate(&User{})
 	db.AutoMigrate(&ToDo{})
 	
-	db.Create(&User{login: "john", password: "john_password"})
-	db.Create(&ToDo{task: "exTask", assignment: "exAssignment", status:"exStatus", delete:"exDelete"})
+	db.Create(&User{Login: "john", Password: "john_password"})
+	db.Create(&ToDo{Task: "exTask", Assignment: "exAssignment", Status:"exStatus", Delete:"exDelete"})
 
-	var todo ToDo
-	db.First(&todo, 1)
 
   	app := fiber.New()
 
-	app.Get("/", func(c *fiber.Ctx) error {
-    	return fiber.NewError(782, "Custom error message")
-	})
+	app.Get("/:task", func(c *fiber.Ctx) error {
+		var todo ToDo
+		result :=  db.First(&todo, "task = ?", c.Params("task"))
+
+		if result.RowsAffected == 0 {
+			return c.SendStatus(404)
+		}
+	
+		return c.Status(200).JSON(todo)
+  	})
 
   	app.Listen(":3000")
 }
