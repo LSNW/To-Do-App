@@ -33,12 +33,10 @@ func main() {
 	db.AutoMigrate(&ToDo{})
 	
 	db.Create(&User{Login: "john", Password: "john_password"})
-	db.Create(&ToDo{Task: "exTask", Assignment: "exAssignment", Status:"exStatus", Delete:"exDelete"})
-
 
   	app := fiber.New()
 
-	app.Get("/:task", func(c *fiber.Ctx) error {
+	app.Get("/search/:task", func(c *fiber.Ctx) error {
 		var todo ToDo
 		result :=  db.First(&todo, "task = ?", c.Params("task"))
 
@@ -48,6 +46,12 @@ func main() {
 	
 		return c.Status(200).JSON(todo)
   	})
+
+	app.Post("/newtask/:task", func(c *fiber.Ctx) error {
+		db.Create(&ToDo{Task: c.Params("task"), Assignment: "", Status: "", Delete: ""})
+		return c.SendString(c.Params("task") + " task created")
+	})
+
 
   	app.Listen(":3000")
 }
