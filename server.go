@@ -4,6 +4,7 @@ import (
 	"github.com/gofiber/fiber/v2"
   	"gorm.io/driver/postgres"
  	"gorm.io/gorm"
+	 "strconv"
 	//"fmt"
 )
 
@@ -83,6 +84,13 @@ func main() {
 		db.Save(&todo)
 		return c.SendString("Successfully updated")
 	})
+
+	app.Delete("/delete/:task", func(c *fiber.Ctx) error {
+		var todo ToDo
+		result := db.Where("task = ?", c.Params("task")).Delete(&todo)
+		//return c.Status(200).JSON(todo)
+		return c.SendString("Deleted " + strconv.Itoa(int(result.RowsAffected)) + " entries with " + c.Params("task"))
+  	})
 
 
   	app.Listen(":3000")
