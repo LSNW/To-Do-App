@@ -3,8 +3,10 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
   	"gorm.io/driver/postgres"
- 	"gorm.io/gorm"
-	 "strconv"
+	"github.com/gofiber/storage/redis"
+	"gorm.io/gorm"
+	"strconv"
+	"github.com/gofiber/fiber/v2/middleware/session"
 	//"fmt"
 )
 
@@ -33,9 +35,17 @@ func main() {
 	db.AutoMigrate(&User{})
 	db.AutoMigrate(&ToDo{})
 	
-	db.Create(&User{Login: "john", Password: "john_password"})
-
   	app := fiber.New()
+
+	rdb := redis.New(redis.Config{
+		Port: 6379,
+	})
+
+	store := session.New(session.Config{
+		Storage: rdb,
+	})
+
+	_ = store
 
 	app.Post("/newtask/", func(c *fiber.Ctx) error {
 		var todo ToDo
@@ -55,7 +65,7 @@ func main() {
 		if result.RowsAffected == 0 {
 			return c.SendStatus(404)
 		}
-	
+		
 		return c.Status(200).JSON(todo)
   	})
 
