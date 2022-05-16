@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 	"strconv"
 	"github.com/gofiber/fiber/v2/middleware/session"
+	"github.com/gofiber/fiber/v2/middleware/basicauth"
 	//"fmt"
 )
 
@@ -46,6 +47,18 @@ func main() {
 	})
 
 	_ = store
+
+	app.Use(basicauth.New(basicauth.Config{
+		Authorizer: func(login, pass string) bool {
+			var user User
+			result := db.Last(&user, "login = ?", login)
+
+			if result.RowsAffected == 0 ||  pass != user.Password  {
+				return false
+			}
+			return true
+		},
+	}))
 
 	app.Post("/newtask/", func(c *fiber.Ctx) error {
 		var todo ToDo
