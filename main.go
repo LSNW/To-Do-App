@@ -7,8 +7,10 @@ import (
 	"gorm.io/gorm"
 	"strconv"
 	"github.com/gofiber/fiber/v2/middleware/session"
-	"github.com/gofiber/fiber/v2/middleware/basicauth"
-	//"fmt"
+	//"github.com/gofiber/fiber/v2/middleware/basicauth"
+	"github.com/google/uuid"
+	"time"
+	"fmt"
 )
 
 type User struct {
@@ -33,34 +35,76 @@ func main() {
 		panic("")
 	}
 
-	db.AutoMigrate(&User{})
-	db.AutoMigrate(&ToDo{})
+	db.AutoMigrate(&User{}, &ToDo{})
 	
   	app := fiber.New()
 
+	// Setting up cache
 	rdb := redis.New(redis.Config{
 		Port: 6379,
 	})
-
 	store := session.New(session.Config{
 		Storage: rdb,
 	})
 
-	_ = store
+	
 
-	app.Use(basicauth.New(basicauth.Config{
-		Authorizer: func(login, pass string) bool {
-			var user User
-			result := db.Last(&user, "login = ?", login)
+	app.Get("/getCookie", func(c *fiber.Ctx) error {
+		sess, err := store.Get(c)
+		if err != nil {
+			panic(err)
+		}
 
-			if result.RowsAffected == 0 ||  pass != user.Password  {
-				return false
-			}
-			return true
-		},
-	}))
+		sessionToken := uuid.NewString()
+		expiresAt := time.Now().Add(5 * time.Second)
 
-	app.Post("/newtask/", func(c *fiber.Ctx) error {
+		sess.Set("sessionToken", sessionToken)
+		sess.Set("expiresAt", expiresAt)
+
+		cookie := new(fiber.Cookie)
+		cookie.Name = "sessionToken"
+  		cookie.Value = sessionToken
+  		cookie.Expires = expiresAt
+
+ 		// Set cookie
+  		c.Cookie(cookie)
+
+		return c.SendString("Logged in")
+	})
+
+	app.Get("/", func(c *fiber.Ctx) error {
+		sessionToken := uuid.NewString()
+		expiresAt := time.Now().Add(5 * time.Second)
+
+		cookie := new(fiber.Cookie)
+		cookie.Name = "sessionToken"
+  		cookie.Value = sessionToken
+  		cookie.Expires = expiresAt
+
+ 		// Set cookie
+  		c.Cookie(cookie)
+
+		sess, err := store.Get(c)
+		if  err != nil {
+			panic(err)
+		}
+		cookieValue := c.Cookies("name", "key does not exist")
+		fmt.Println(cookie.Name)
+		check := sess.Get(cookieValue)
+		_ = check
+		if cookieValue == "" {
+			return c.SendStatus(401)
+		}
+
+
+		return c.SendString("Cookie test passed")
+	})
+
+	app.Get("/landing", func(c *fiber.Ctx) error {
+		return c.SendString("Landing page")
+	})
+
+	app.Post("/api/ToDo/", func(c *fiber.Ctx) error {
 		var todo ToDo
 
 		if err := c.BodyParser(&todo); err != nil {
@@ -71,7 +115,7 @@ func main() {
 		return c.SendString("Successfully created")
 	})
 	
-	app.Get("/search/:task", func(c *fiber.Ctx) error {
+	app.Get("/api/ToDo/:task", func(c *fiber.Ctx) error {
 		var todo ToDo
 		result :=  db.Last(&todo, "task = ?", c.Params("task"))
 
@@ -82,7 +126,7 @@ func main() {
 		return c.Status(200).JSON(todo)
   	})
 
-	app.Put("/update/:task", func(c *fiber.Ctx) error {
+	app.Patch("/api/ToDo/:task", func(c *fiber.Ctx) error {
 		var todo ToDo
 		var updatedToDo ToDo
 
@@ -108,7 +152,7 @@ func main() {
 		return c.SendString("Successfully updated")
 	})
 
-	app.Delete("/delete/:task", func(c *fiber.Ctx) error {
+	app.Delete("/api/ToDo/:task", func(c *fiber.Ctx) error {
 		var todo ToDo
 		result := db.Where("task = ?", c.Params("task")).Delete(&todo)
 		//return c.Status(200).JSON(todo)
