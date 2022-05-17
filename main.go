@@ -10,7 +10,7 @@ import (
 	//"github.com/gofiber/fiber/v2/middleware/basicauth"
 	"github.com/google/uuid"
 	"time"
-	"fmt"
+	//"fmt"
 )
 
 type User struct {
@@ -44,10 +44,9 @@ func main() {
 		Port: 6379,
 	})
 	store := session.New(session.Config{
+		Expiration: 15 * time.Second,
 		Storage: rdb,
-	})
-
-	
+	})	  
 
 	app.Get("/getCookie", func(c *fiber.Ctx) error {
 		sess, err := store.Get(c)
@@ -56,48 +55,34 @@ func main() {
 		}
 
 		sessionToken := uuid.NewString()
-		expiresAt := time.Now().Add(5 * time.Second)
-
-		sess.Set("sessionToken", sessionToken)
-		sess.Set("expiresAt", expiresAt)
-
+		sess.Set(sessionToken, "valid")
 		cookie := new(fiber.Cookie)
 		cookie.Name = "sessionToken"
   		cookie.Value = sessionToken
-  		cookie.Expires = expiresAt
+  		cookie.Expires = time.Now().Add(15 * time.Second)
 
  		// Set cookie
   		c.Cookie(cookie)
 
-		return c.SendString("Logged in")
+		if err := sess.Save(); err != nil {
+			panic(err)
+		}
+
+		return c.SendString(sessionToken)
 	})
 
 	app.Get("/", func(c *fiber.Ctx) error {
-		sessionToken := uuid.NewString()
-		expiresAt := time.Now().Add(5 * time.Second)
-
-		cookie := new(fiber.Cookie)
-		cookie.Name = "sessionToken"
-  		cookie.Value = sessionToken
-  		cookie.Expires = expiresAt
-
- 		// Set cookie
-  		c.Cookie(cookie)
-
 		sess, err := store.Get(c)
 		if  err != nil {
 			panic(err)
 		}
-		cookieValue := c.Cookies("name", "key does not exist")
-		fmt.Println(cookie.Name)
+		cookieValue := c.Cookies("sessionToken")
 		check := sess.Get(cookieValue)
-		_ = check
-		if cookieValue == "" {
+		if check == nil {
 			return c.SendStatus(401)
 		}
 
-
-		return c.SendString("Cookie test passed")
+		return c.SendString(c.Cookies("sessionToken"))
 	})
 
 	app.Get("/landing", func(c *fiber.Ctx) error {
