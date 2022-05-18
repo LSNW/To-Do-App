@@ -7,8 +7,6 @@ import (
 	"gorm.io/gorm"
 	"strconv"
 	"github.com/gofiber/fiber/v2/middleware/session"
-	//"github.com/gofiber/fiber/v2/middleware/basicauth"
-	//"github.com/google/uuid"
 	"time"
 	//"fmt"
 )
@@ -28,39 +26,30 @@ type ToDo struct {
 }
 
 func main() {
+	// app, database, cache initializations
 	dsn := "host=localhost user=todo password=todopassword dbname=todo port=5432 sslmode=disable"
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-
 	if err != nil {
 		panic("")
 	}
-
 	db.AutoMigrate(&User{}, &ToDo{})
-	
   	app := fiber.New()
-
-	// Setting up a session with Redis
 	rdb := redis.New(redis.Config{
 		Port: 6379,
 	})
 	store := session.New(session.Config{
 		Storage: rdb,
-	})	  
-
-	// this is automatic login
-	app.Get("/login", func(c *fiber.Ctx) error {
-		sess, err := store.Get(c)
-		if err != nil {
-			panic(err)
-		}
-		sess.Regenerate()
-		sess.SetExpiry(5 * time.Second)
-		if err := sess.Save(); err != nil {
-			panic(err)
-		}
-
-		return c.SendString("You are now \"logged in\" for 15 seconds")
 	})
+
+	expirationTime := 7 * time.Second
+
+	resetCookieExpiration := func(c *fiber.Ctx) {
+		cookie := new(fiber.Cookie)
+		cookie.Name = "session_id"
+		cookie.Value = c.Cookies("session_id")
+		cookie.Expires = time.Now().Add(expirationTime)
+		c.Cookie(cookie)
+	}
 
 	// this is a proper login
 	app.Post("/login", func(c *fiber.Ctx) error {
@@ -85,30 +74,44 @@ func main() {
 			panic(err)
 		}
 		sess.Regenerate()
-		sess.SetExpiry(15 * time.Second)
-		if err := sess.Save(); err != nil {
+		defer func() {
+			sess.SetExpiry(expirationTime)
+			if err := sess.Save(); err != nil {
+				panic(err)
+			}
+		}()
+
+		return c.SendString(existsUser.Login +  ", you are now logged in for 10 seconds")
+	})
+
+	// this is an automatic login
+	app.Get("/login", func(c *fiber.Ctx) error {
+		sess, err := store.Get(c)
+		if err != nil {
 			panic(err)
 		}
+		sess.Regenerate()
+		defer func() {
+			sess.SetExpiry(expirationTime)
+			if err := sess.Save(); err != nil {
+				panic(err)
+			}
+		}()
 
-		return c.SendString(existsUser.Login +  ", you are now logged in for 15 seconds")
+		return c.SendString("You are now \"logged in\" for 10 seconds")
 	})
 
 	// session tester (landing page)
 	app.Get("/", func(c *fiber.Ctx) error {
 		sess, err := store.Get(c)
-		if  err != nil {
+		if err != nil {
 			panic(err)
 		}
-		cookieValue := c.Cookies("session_id")
-		if cookieValue != sess.ID() {
+		if c.Cookies("session_id") != sess.ID() {
 			return c.SendStatus(401)
 		}
-		sess.SetExpiry(200 * time.Second)
-		if err := sess.Save(); err != nil {
-			panic(err)
-		}
-
-		return c.SendString("Your session token is " + c.Cookies("session_id"))
+		resetCookieExpiration(c)
+		return c.SendString("Authorized :D")
 	})
 
 
