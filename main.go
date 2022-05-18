@@ -15,8 +15,8 @@ import (
 
 type User struct {
 	gorm.Model
-	Login string
-	Password string
+	Login string `json:"login"`
+	Password string `json:"password"`
 }
 
 type ToDo struct {
@@ -54,12 +54,43 @@ func main() {
 			panic(err)
 		}
 		sess.Regenerate()
-		sess.SetExpiry(15 * time.Second)
+		sess.SetExpiry(5 * time.Second)
 		if err := sess.Save(); err != nil {
 			panic(err)
 		}
 
 		return c.SendString("You are now \"logged in\" for 15 seconds")
+	})
+
+	// this is a proper login
+	app.Post("/login", func(c *fiber.Ctx) error {
+		var attemptedUser User
+		var existsUser User
+
+		if err := c.BodyParser(&attemptedUser); err != nil {
+			return err
+		}
+		result := db.Last(&existsUser, "login = ?", attemptedUser.Login)
+		// separation is for debug
+		if attemptedUser.Login == "" {
+			return c.SendString("Please enter a login")
+		} else if result.RowsAffected == 0  {
+			return c.SendString("Incorrect login")
+		} else if attemptedUser.Password != existsUser.Password {
+			return c.SendString("Incorrect password")
+		}
+
+		sess, err := store.Get(c)
+		if err != nil {
+			panic(err)
+		}
+		sess.Regenerate()
+		sess.SetExpiry(15 * time.Second)
+		if err := sess.Save(); err != nil {
+			panic(err)
+		}
+
+		return c.SendString(existsUser.Login +  ", you are now logged in for 15 seconds")
 	})
 
 	// session tester (landing page)
@@ -72,7 +103,7 @@ func main() {
 		if cookieValue != sess.ID() {
 			return c.SendStatus(401)
 		}
-		sess.SetExpiry(15 * time.Second)
+		sess.SetExpiry(200 * time.Second)
 		if err := sess.Save(); err != nil {
 			panic(err)
 		}
