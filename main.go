@@ -44,7 +44,6 @@ func main() {
 		Port: 6379,
 	})
 	store := session.New(session.Config{
-		Expiration: 5 * time.Second,
 		Storage: rdb,
 	})	  
 
@@ -55,6 +54,7 @@ func main() {
 			panic(err)
 		}
 		sess.Regenerate()
+		sess.SetExpiry(15 * time.Second)
 		if err := sess.Save(); err != nil {
 			panic(err)
 		}
@@ -71,6 +71,10 @@ func main() {
 		cookieValue := c.Cookies("session_id")
 		if cookieValue != sess.ID() {
 			return c.SendStatus(401)
+		}
+		sess.SetExpiry(15 * time.Second)
+		if err := sess.Save(); err != nil {
+			panic(err)
 		}
 
 		return c.SendString("Your session token is " + c.Cookies("session_id"))
