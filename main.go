@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	//"github.com/gofiber/fiber/v2/middleware/basicauth"
-	"github.com/google/uuid"
+	//"github.com/google/uuid"
 	"time"
 	//"fmt"
 )
@@ -39,56 +39,45 @@ func main() {
 	
   	app := fiber.New()
 
-	// Setting up cache
+	// Setting up a session with Redis
 	rdb := redis.New(redis.Config{
 		Port: 6379,
 	})
 	store := session.New(session.Config{
-		Expiration: 15 * time.Second,
+		Expiration: 5 * time.Second,
 		Storage: rdb,
 	})	  
 
-	app.Get("/getCookie", func(c *fiber.Ctx) error {
+	// this is automatic login
+	app.Get("/login", func(c *fiber.Ctx) error {
 		sess, err := store.Get(c)
 		if err != nil {
 			panic(err)
 		}
-
-		sessionToken := uuid.NewString()
-		sess.Set(sessionToken, "valid")
-		cookie := new(fiber.Cookie)
-		cookie.Name = "sessionToken"
-  		cookie.Value = sessionToken
-  		cookie.Expires = time.Now().Add(15 * time.Second)
-
- 		// Set cookie
-  		c.Cookie(cookie)
-
+		sess.Regenerate()
 		if err := sess.Save(); err != nil {
 			panic(err)
 		}
 
-		return c.SendString(sessionToken)
+		return c.SendString("You are now \"logged in\" for 15 seconds")
 	})
 
+	// session tester (landing page)
 	app.Get("/", func(c *fiber.Ctx) error {
 		sess, err := store.Get(c)
 		if  err != nil {
 			panic(err)
 		}
-		cookieValue := c.Cookies("sessionToken")
-		check := sess.Get(cookieValue)
-		if check == nil {
+		cookieValue := c.Cookies("session_id")
+		if cookieValue != sess.ID() {
 			return c.SendStatus(401)
 		}
 
-		return c.SendString(c.Cookies("sessionToken"))
+		return c.SendString("Your session token is " + c.Cookies("session_id"))
 	})
 
-	app.Get("/landing", func(c *fiber.Ctx) error {
-		return c.SendString("Landing page")
-	})
 
+	// ToDo REST API, does not require login
 	app.Post("/api/ToDo/", func(c *fiber.Ctx) error {
 		var todo ToDo
 
