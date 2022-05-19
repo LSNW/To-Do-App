@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"time"
+	"github.com/alexedwards/argon2id"
 	//"fmt"
 )
 
@@ -60,13 +61,16 @@ func main() {
 			return err
 		}
 		result := db.Last(&existsUser, "login = ?", attemptedUser.Login)
-		// separation is for debug
-		if attemptedUser.Login == "" {
-			return c.SendString("Please enter a login")
-		} else if result.RowsAffected == 0  {
-			return c.SendString("Incorrect login")
-		} else if attemptedUser.Password != existsUser.Password {
-			return c.SendString("Incorrect password")
+
+		if attemptedUser.Login == "" || attemptedUser.Password == "" {
+			return c.SendString("Please enter a login and password")
+		}
+		match, err := argon2id.ComparePasswordAndHash(attemptedUser.Password, existsUser.Password)
+		if err != nil {
+			return err
+		} else if !match || result.RowsAffected == 0 {
+			// this msg is for debugging
+			return c.SendString("Incorrect login/password")
 		}
 
 		sess, err := store.Get(c)
@@ -81,7 +85,7 @@ func main() {
 			}
 		}()
 
-		return c.SendString(existsUser.Login +  ", you are now logged in for 10 seconds")
+		return c.SendString(existsUser.Login +  ", you are now logged in for 7 seconds")
 	})
 
 	// this is an automatic login
@@ -98,7 +102,7 @@ func main() {
 			}
 		}()
 
-		return c.SendString("You are now \"logged in\" for 10 seconds")
+		return c.SendString("You are now \"logged in\" for 7 seconds")
 	})
 
 	// session tester (landing page)
@@ -111,7 +115,28 @@ func main() {
 			return c.SendStatus(401)
 		}
 		resetCookieExpiration(c)
-		return c.SendString("Authorized :D")
+		return c.SendString("Welcome")
+	})
+
+	// User REST API
+	app.Post("/api/User/", func(c *fiber.Ctx) error {
+		var user User
+		if err := c.BodyParser(&user); err != nil {
+			return err
+		}
+		// separation is for debug
+		if user.Login == "" || user.Password == "" {
+			return c.SendString("Please enter a login and password")
+		} else if db.Last(&user, "login = ?", user.Login).RowsAffected > 0 {
+			return c.SendString("Login already exists")
+		}
+		hash, err := argon2id.CreateHash(user.Password, argon2id.DefaultParams)
+		user.Password = hash
+		if err != nil {
+			return err
+		}
+		db.Create(&User{Login: user.Login, Password:user.Password})
+		return c.SendString("Successfully created user profile for  " + user.Login)
 	})
 
 

@@ -3,6 +3,7 @@ module ToDoApp
 go 1.18
 
 require (
+	github.com/alexedwards/argon2id v0.0.0-20211130144151-3585854a6387 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/cosmtrek/air v1.29.0 // indirect
