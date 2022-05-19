@@ -9,22 +9,12 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/session"
 	"time"
 	"github.com/alexedwards/argon2id"
+	"github.com/jinzhu/copier"
+
+	"ToDoApp/app/models"
 	//"fmt"
 )
 
-type User struct {
-	gorm.Model
-	Login string `json:"login"`
-	Password string `json:"password"`
-}
-
-type ToDo struct {
-	gorm.Model
-	Task string `json:"task"`
-	Assignment string `json:"assignment"`
-	Status string `json:"status"`
-	Delete string `json:"delete"`
-}
 
 func main() {
 	// app, database, cache initializations
@@ -33,7 +23,7 @@ func main() {
 	if err != nil {
 		panic("")
 	}
-	db.AutoMigrate(&User{}, &ToDo{})
+	db.AutoMigrate(&models.User{}, &models.ToDo{})
   	app := fiber.New()
 	rdb := redis.New(redis.Config{
 		Port: 6379,
@@ -52,10 +42,19 @@ func main() {
 		c.Cookie(cookie)
 	}
 
+	app.Get("/copytest/:user", func(c *fiber.Ctx) error {
+		var user models.User
+		var userResponse models.UserResponse
+		db.Last(&user, "login = ?", c.Params("user"))
+		copier.Copy(&userResponse, &user)
+
+		return c.Status(200).JSON(userResponse)
+	})
+
 	// this is a proper login
 	app.Post("/login", func(c *fiber.Ctx) error {
-		var attemptedUser User
-		var existsUser User
+		var attemptedUser models.User
+		var existsUser models.User
 
 		if err := c.BodyParser(&attemptedUser); err != nil {
 			return err
@@ -120,7 +119,7 @@ func main() {
 
 	// User REST API
 	app.Post("/api/User/", func(c *fiber.Ctx) error {
-		var user User
+		var user models.User
 		if err := c.BodyParser(&user); err != nil {
 			return err
 		}
@@ -135,25 +134,25 @@ func main() {
 		if err != nil {
 			return err
 		}
-		db.Create(&User{Login: user.Login, Password:user.Password})
+		db.Create(&models.User{Login: user.Login, Password:user.Password})
 		return c.SendString("Successfully created user profile for  " + user.Login)
 	})
 
 
 	// ToDo REST API, does not require login
 	app.Post("/api/ToDo/", func(c *fiber.Ctx) error {
-		var todo ToDo
+		var todo models.ToDo
 
 		if err := c.BodyParser(&todo); err != nil {
 			return err
 		}
 
-		db.Create(&ToDo{Task: todo.Task, Assignment: todo.Assignment, Status: todo.Status, Delete: todo.Delete})
+		db.Create(&models.ToDo{Task: todo.Task, Assignment: todo.Assignment, Status: todo.Status, Delete: todo.Delete})
 		return c.SendString("Successfully created")
 	})
 	
 	app.Get("/api/ToDo/:task", func(c *fiber.Ctx) error {
-		var todo ToDo
+		var todo models.ToDo
 		result :=  db.Last(&todo, "task = ?", c.Params("task"))
 
 		if result.RowsAffected == 0 {
@@ -164,8 +163,8 @@ func main() {
   	})
 
 	app.Patch("/api/ToDo/:task", func(c *fiber.Ctx) error {
-		var todo ToDo
-		var updatedToDo ToDo
+		var todo models.ToDo
+		var updatedToDo models.ToDo
 
 		db.Last(&todo, "task = ?", c.Params("task"))
 		if err := c.BodyParser(&updatedToDo); err != nil {
@@ -190,7 +189,7 @@ func main() {
 	})
 
 	app.Delete("/api/ToDo/:task", func(c *fiber.Ctx) error {
-		var todo ToDo
+		var todo models.ToDo
 		result := db.Where("task = ?", c.Params("task")).Delete(&todo)
 		//return c.Status(200).JSON(todo)
 		return c.SendString("Deleted " + strconv.Itoa(int(result.RowsAffected)) + " entries with " + c.Params("task"))
