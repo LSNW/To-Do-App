@@ -13,10 +13,11 @@ type ToDo struct {
 	UserID uint
 }
 
-type ToDoResponse struct {
-	ID uint `copier:"must, nopanic"`
+type ToDoDTO struct {
+	ID uint `coper:"must, nopanic"`
 	Task string `copier:"must, nopanic"`
 	Assignment string `copier:"must, nopanic"`
 	Status string `copier:"must, nopanic"`
 	Delete string `copier:"must, nopanic"`
+	UserID uint `copier:"must, nopanic"`
 }
