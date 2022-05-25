@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/template/html"
 	//"fmt
 
 	"ToDoApp/app/models"
@@ -11,15 +12,18 @@ import (
 
 
 func main() {
-	app := fiber.New()
+	engine := html.New("./resources/views", ".html")
+    app := fiber.New(fiber.Config{
+        Views: engine,
+    })
 	storage.InitDatabase()
 	storage.InitCache()
 	storage.DB.AutoMigrate(&models.User{}, &models.ToDo{})
-	storage.DB.AutoMigrate(&models.User{}, &models.ToDo{})
 
 	// Logins
-	app.Post("/login", controllers.Login)
-	app.Get("/login", controllers.AutoLogin)
+	app.Get("/login", controllers.Login)
+	app.Post("/authenticate", controllers.Authenticate)
+	//app.Get("/login", controllers.AutoLogin)
 
 	// this landing page is for testing session authenticity
 	app.Get("/", controllers.Landing)
