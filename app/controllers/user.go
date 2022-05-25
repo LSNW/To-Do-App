@@ -22,24 +22,29 @@ func resetCookieExpiration(c *fiber.Ctx) {
 }
 
 func Login(c *fiber.Ctx) error {
-	var attemptedUser models.User
+	return c.Render("login", nil)
+}
+
+func Authenticate(c *fiber.Ctx) error {
+	attemptedUser := models.User{Login:c.FormValue("login"), Password:c.FormValue("password")}
 	var existsUser models.User
 
-	if err := c.BodyParser(&attemptedUser); err != nil {
-		return err
-	}
 	result := storage.DB.Last(&existsUser, "login = ?", attemptedUser.Login)
 
 	if attemptedUser.Login == "" || attemptedUser.Password == "" {
-		return c.SendString("Please enter a login and password")
+		return c.Render("login", fiber.Map {
+			"error": "Please enter a username and password",
+		})
 	}
+
 	match, err := argon2id.ComparePasswordAndHash(attemptedUser.Password, existsUser.Password)
-	if err != nil {
+	if !match || result.RowsAffected == 0 {
+		return c.Render("login", fiber.Map {
+			"error": "Incorrect username or password",
+		})
+	} else if err != nil {
 		return err
-	} else if !match || result.RowsAffected == 0 {
-		// this msg is for debugging
-		return c.SendString("Incorrect login/password")
-	}
+	} 
 
 	var responseUser models.UserResponse
 	copier.Copy(&responseUser, &existsUser)
@@ -55,7 +60,7 @@ func Login(c *fiber.Ctx) error {
 		}
 	}()
 
-	return c.SendString(existsUser.Login +  ", you are now logged in")
+	return c.Redirect("/")
 }
 
 func AutoLogin(c *fiber.Ctx) error {
@@ -83,7 +88,9 @@ func Landing(c *fiber.Ctx) error {
 		return c.SendStatus(401)
 	}
 	resetCookieExpiration(c)
-	return c.SendString("Welcome, your user ID is " +  strconv.Itoa(int(sess.Get("user_id").(uint))))
+	return c.Render("index", fiber.Map{
+		"user_id": strconv.Itoa(int(sess.Get("user_id").(uint))),
+	})
 }
 
 func CreateUser(c *fiber.Ctx) error {
