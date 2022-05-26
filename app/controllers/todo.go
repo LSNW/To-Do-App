@@ -3,6 +3,7 @@ package controllers
 import (
 	"github.com/gofiber/fiber/v2"
 	"fmt"
+	"github.com/jinzhu/copier"
 
 	"ToDoApp/app/models"
 	"ToDoApp/app/storage"
@@ -26,17 +27,19 @@ func CreateToDo(c *fiber.Ctx) error {
 	return c.Status(200).JSON(createToDo)
 }
 
-func GetToDo(c *fiber.Ctx) error {
+func GetToDo(c *fiber.Ctx) []models.ToDoDTO {
 	var todos []models.ToDo
+	var todoDTOs []models.ToDoDTO
 	sess, err := storage.Store.Get(c)
 	if err != nil {
 		panic(err)
 	} else if c.Cookies("session_id") != sess.ID() {
-		return c.SendStatus(401)
+		//return c.SendStatus(401)
 	}
 	storage.DB.Where(&models.ToDo{UserID: sess.Get("user_id").(uint)}).Find(&todos)
-	
-	return c.Status(200).JSON(todos)
+	copier.Copy(&todoDTOs, &todos)
+	return todoDTOs
+	//return c.Status(200).JSON(todos)
 }
 
 func FindToDo(c *fiber.Ctx) error {

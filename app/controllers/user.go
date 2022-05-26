@@ -21,6 +21,20 @@ func resetCookieExpiration(c *fiber.Ctx) {
 	c.Cookie(cookie)
 }
 
+func getToDo(c *fiber.Ctx) []models.ToDo {
+	var todos []models.ToDo
+	sess, err := storage.Store.Get(c)
+	if err != nil {
+		panic(err)
+	} else if c.Cookies("session_id") != sess.ID() {
+		//return c.SendStatus(401)
+	}
+	storage.DB.Where(&models.ToDo{UserID: sess.Get("user_id").(uint)}).Find(&todos)
+	
+	return todos
+	//return c.Status(200).JSON(todos)
+}
+
 func Login(c *fiber.Ctx) error {
 	return c.Render("login", nil)
 }
@@ -90,6 +104,7 @@ func Landing(c *fiber.Ctx) error {
 	resetCookieExpiration(c)
 	return c.Render("index", fiber.Map{
 		"user_id": strconv.Itoa(int(sess.Get("user_id").(uint))),
+		"todos": getToDo(c),
 	})
 }
 
