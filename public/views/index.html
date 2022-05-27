@@ -15,11 +15,12 @@
     </div>
     <div class="container">
         <div class="row">
-            {{range .todos}}
+            {{range $index, $value := .todos}}
             <div class="col-3 box">
-                <div class="card col-12" style="width: 18rem;">
+                <div class="card col-12" style="width: 18rem;" data-id={{$index}} data-toggle="modal"
+                    data-target="#exampleModal">
                     <div class="card-body">
-                        <h5 class="card-title">{{.Task}}</h5>
+                        <h5 class="card-title">{{ .Task }}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">{{.Status}}</h6>
                         <p class="card-text">{{.Assignment}}</p>
                     </div>
@@ -28,6 +29,52 @@
             {{end}}
         </div>
     </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary">Mark as Complete</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
+
+
+<script src="https://code.jquery.com/jquery-3.1.1.min.js">
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js">
+</script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js">
+</script>
+
+<script>
+    $(document).on("click", ".card", function () {
+        var cards = {{
+            .todos
+    }};
+    let idx = $(this).data('id')
+    let card = cards[idx]
+    console.log(card)
+    $("#exampleModal .modal-title").text(card.task + " (" + card.ID + ")");
+    $("#exampleModal .modal-body").text(card.assignment);
+    if (card.status == "status") {
+        $("#exampleModal .modal-dialog").css("border", "3px solid red")
+    } else {
+
+    }
+    })
+</script>
 
 </html>
