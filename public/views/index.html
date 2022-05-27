@@ -17,12 +17,12 @@
         <div class="row">
             {{range $index, $value := .todos}}
             <div class="col-3 box">
-                <div class="card col-12" style="width: 18rem;" data-id={{$index}} data-toggle="modal"
-                    data-target="#exampleModal">
+                <div class="card col-12" style="width: 18rem;" data-toggle="modal" data-target="#todoModal"
+                    onclick="displayModal({{$index}})">
                     <div class="card-body">
                         <h5 class="card-title">{{ .Task }}</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">{{.Status}}</h6>
-                        <p class="card-text">{{.Assignment}}</p>
+                        <h6 class="card-subtitle mb-2 text-muted">{{ .Status }}</h6>
+                        <p class="card-text">{{ .Assignment }}</p>
                     </div>
                 </div>
             </div>
@@ -31,11 +31,11 @@
     </div>
 
     <!-- Modal -->
-    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal fade" id="todoModal" tabindex="-1" aria-labelledby="todoModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="exampleModalLabel"></h5>
+                    <h5 class="modal-title" id="todoModalLabel"></h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -44,7 +44,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Mark as Complete</button>
+                    <button type="button" class="btn btn-primary" onclick="invertStatus()">Mark as Complete</button>
                 </div>
             </div>
         </div>
@@ -60,21 +60,38 @@
 </script>
 
 <script>
-    $(document).on("click", ".card", function () {
+    let focusID;
+
+    function displayModal(idx) {
         var cards = {{
             .todos
     }};
-    let idx = $(this).data('id')
     let card = cards[idx]
+    focusID = card.ID
     console.log(card)
-    $("#exampleModal .modal-title").text(card.task + " (" + card.ID + ")");
-    $("#exampleModal .modal-body").text(card.assignment);
-    if (card.status == "status") {
-        $("#exampleModal .modal-dialog").css("border", "3px solid red")
-    } else {
-
+    $("#todoModal .modal-title").text(card.task + " (" + card.ID + ")");
+    $("#todoModal .modal-body").text(card.assignment);
+    $("#todoModal .modal-dialog").css("border", card.status == "status" ? "3px solid red" : "3px solid green")
+    
     }
-    })
+
+    function invertStatus() {
+        fetch(`/api/ToDo/${focusID}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(
+                {
+                    "status": "complete"
+                }
+            )
+        })
+        //.then(response => response.json())
+        //.then(json => {
+        //  likesContainer.innerText = `${json.likes} likes`;
+        //});
+    }
 </script>
 
 </html>

@@ -29,10 +29,9 @@ func getToDo(c *fiber.Ctx) []models.ToDo {
 	} else if c.Cookies("session_id") != sess.ID() {
 		//return c.SendStatus(401)
 	}
-	storage.DB.Where(&models.ToDo{UserID: sess.Get("user_id").(uint)}).Find(&todos)
+	storage.DB.Where(&models.ToDo{UserID: sess.Get("user_id").(uint)}).Order("id asc").Find(&todos)
 	
 	return todos
-	//return c.Status(200).JSON(todos)
 }
 
 func Login(c *fiber.Ctx) error {
