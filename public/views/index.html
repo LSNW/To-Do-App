@@ -7,18 +7,37 @@
     integrity="sha384-zCbKRCUGaJDkqS1kPbPd7TveP5iyJE0EjAuZQTgFLD2ylzuqKfdKlfG/eSrtxUkn" crossorigin="anonymous">
 <!-- Personal stylesheet -->
 <link rel="stylesheet" href="../styles/style.css">
+<script src="//unpkg.com/alpinejs" defer></script>
 
 
-<body>
+
+<body x-data="{active: 'status'}">
     <div class="alert alert-primary" role="alert">
         Your User ID is {{.user_id}}
     </div>
+
     <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-6">
+                <ul class="nav nav-pills nav-justified">
+                    <li class="nav-item">
+                        <a x-bind:class="active == 'status' ? 'nav-link active' : 'nav-link'"
+                            x-on:click="active = 'status'" href="#">Incomplete</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" x-bind:class="active == 'complete' ? 'nav-link active' : 'nav-link'"
+                            x-on:click="active = 'complete'" href="#">Complete</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+
         <div class="row">
             {{range $index, $value := .todos}}
-            <div class="col-3 box">
+            <div class="col-3 box" x-show="'{{.Status}}' == active">
                 <div class="card col-12" style="width: 18rem;" data-toggle="modal" data-target="#todoModal"
-                    onclick="displayModal({{$index}})">
+                    onclick="displayModal({{$index}})" id="card-{{.ID}}">
                     <div class="card-body">
                         <h5 class="card-title">{{ .Task }}</h5>
                         <h6 class="card-subtitle mb-2 text-muted">{{ .Status }}</h6>
@@ -43,7 +62,7 @@
                 <div class="modal-body">
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteCard()">Delete</button>
                     <button type="button" class="btn btn-primary" onclick="invertStatus()">Mark as Complete</button>
                 </div>
             </div>
@@ -91,6 +110,10 @@
         //.then(json => {
         //  likesContainer.innerText = `${json.likes} likes`;
         //});
+    }
+
+    function deleteCard() {
+        document.getElementById(`card-${focusID}`).remove()
     }
 </script>
 
