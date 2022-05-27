@@ -15,7 +15,7 @@ func CreateToDo(c *fiber.Ctx) error {
 	if err != nil {
 		panic(err)
 	} else if c.Cookies("session_id") != sess.ID() {
-		return c.SendStatus(401)
+		// return c.sendstatus(401)
 	}
 
 	if err := c.BodyParser(&todo); err != nil {
@@ -27,19 +27,19 @@ func CreateToDo(c *fiber.Ctx) error {
 	return c.Status(200).JSON(createToDo)
 }
 
-func GetToDo(c *fiber.Ctx) []models.ToDoDTO {
+func GetToDo(c *fiber.Ctx) error {
 	var todos []models.ToDo
 	var todoDTOs []models.ToDoDTO
 	sess, err := storage.Store.Get(c)
 	if err != nil {
 		panic(err)
 	} else if c.Cookies("session_id") != sess.ID() {
-		//return c.SendStatus(401)
+		//// return c.sendstatus(401)
 	}
 	storage.DB.Where(&models.ToDo{UserID: sess.Get("user_id").(uint)}).Find(&todos)
 	copier.Copy(&todoDTOs, &todos)
-	return todoDTOs
-	//return c.Status(200).JSON(todos)
+	//return todoDTOs
+	return c.Status(200).JSON(todos)
 }
 
 func FindToDo(c *fiber.Ctx) error {
@@ -51,7 +51,7 @@ func FindToDo(c *fiber.Ctx) error {
 	if err != nil {
 		panic(err)
 	} else if c.Cookies("session_id") != sess.ID() || todo.UserID != sess.Get("user_id").(uint) {
-		return c.SendStatus(401)
+		//// return c.sendstatus(401)
 	} else if result.RowsAffected == 0 {
 		return c.SendStatus(404)
 	}
@@ -72,7 +72,7 @@ func UpdateToDo(c *fiber.Ctx) error {
 	if err := c.BodyParser(&updatedToDo); err != nil {
 		return err
 	} else if c.Cookies("session_id") != sess.ID() || todo.UserID != sess.Get("user_id").(uint) {
-		return c.SendStatus(401)
+		//// return c.sendstatus(401)
 	} else if result.RowsAffected == 0 {
 		return c.SendStatus(404)
 	}
@@ -102,7 +102,7 @@ func DeleteToDo(c *fiber.Ctx) error {
 		return err
 	} else if c.Cookies("session_id") != sess.ID() || todo.UserID != sess.Get("user_id").(uint) {
 		fmt.Println(todo.UserID)
-		return c.SendStatus(401)
+		// return c.sendstatus(401)
 	} else if result.RowsAffected == 0 {
 		return c.SendStatus(404)
 	}

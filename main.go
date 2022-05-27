@@ -35,13 +35,11 @@ func main() {
 
 
 	// ToDo REST API
-	/*
-	app.Post("/api/ToDo/", controllers.CreateToDo)
-	app.Get("/api/ToDo/all", controllers.GetToDo)
+	//app.Post("/api/ToDo/", controllers.CreateToDo)
+	//app.Get("/api/ToDo/all", controllers.GetToDo)
 	app.Get("/api/ToDo/:id", controllers.FindToDo)
 	app.Patch("/api/ToDo/:id", controllers.UpdateToDo)
-	app.Delete("/api/ToDo/:id", controllers.DeleteToDo)
-	*/
+	//app.Delete("/api/ToDo/:id", controllers.DeleteToDo)
 
   	app.Listen(":3000")
 }
