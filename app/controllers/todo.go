@@ -91,7 +91,7 @@ func UpdateToDo(c *fiber.Ctx) error {
 	}
 
 	storage.DB.Save(&todo)
-	return c.SendString("Successfully updated")
+	return c.Status(200).JSON(todo)
 }
 
 func DeleteToDo(c *fiber.Ctx) error {
