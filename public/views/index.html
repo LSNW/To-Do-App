@@ -74,14 +74,18 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="todoModalLabel"></h5>
+                    <h5 class="modal-title" id="todoModalLabel" contenteditable="true" oninput="revealSaveButton()">
+                    </h5>
+                    <h5 class="id-title"></h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <div class="modal-body">
+                <div class="modal-body" id="todoModalBody" contenteditable="true" oninput="revealSaveButton()">
                 </div>
                 <div class="modal-footer">
+                    <button class="btn btn-info" data-dismiss="modal" aria-label="Close" id="saveUpdate" display="none"
+                        onclick="updateCard()">Save Changes</button>
                     <button type="button" class="btn btn-danger" data-dismiss="modal"
                         onclick="deleteCard()">Delete</button>
                     <button class="btn btn-primary" data-dismiss="modal" aria-label="Close"
@@ -114,19 +118,23 @@
     return cards
     }
 
+    function revealSaveButton() {
+        document.getElementById("saveUpdate").style.display = "block"
+    }
+
     function displayModal(card, idx) {
         focusIdx = idx
         focusID = card.ID
-        $("#todoModal .modal-title").text(card.task + " (" + card.ID + ")")
+        document.getElementById("saveUpdate").style.display = "none"
+        $("#todoModal .modal-title").text(card.task)
+        $("#todoModal .id-title").text("(" + card.ID + ")")
         $("#todoModal .modal-body").text(card.assignment)
         $("#todoModal .modal-dialog").css("border", card.status == "status" ? "3px solid red" : "3px solid green")
 
     }
 
     function createCard(event) {
-        console.log(window.model.cards[0])
         let formData = event.target.elements;
-        console.log(formData)
         fetch("/api/ToDo/", {
             method: "POST",
             headers: {
@@ -177,6 +185,34 @@
             })
             window.dispatchEvent(event);
         })
+    }
+
+    function updateCard() {
+        let newTask = document.getElementById("todoModalLabel").innerText
+        let newAssignment = document.getElementById("todoModalBody").innerText
+        fetch(`/api/ToDo/${focusID}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(
+                {
+                    "task": newTask,
+                    "assignment": newAssignment
+                }
+            )
+        })
+            .then(response => response.json())
+            .then(data => {
+                let event = new CustomEvent("deck-change", {
+                    detail: {
+                        modify: (cards) => {
+                            cards[focusIdx] = data
+                        }
+                    }
+                })
+                window.dispatchEvent(event);
+            })
     }
 
     function deleteCard() {
