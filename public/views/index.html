@@ -16,17 +16,27 @@
         Your User ID is {{.user_id}}
     </div>
 
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-6">
-                <ul class="nav nav-pills nav-justified">
+    <div class="container" x-data="{showCards: initCards()}" x-on:items-load.window="showCards[$event.detail.focusIdx].status = $event.detail.newStatus;
+        cards = showCards">
+
+        <div class="row">
+            <div class="col-10">
+                <ul class="nav nav-tabs">
                     <li class="nav-item">
-                        <a x-bind:class="active == 'status' ? 'nav-link active' : 'nav-link'"
-                            x-on:click="active = 'status'" href="#">Incomplete</a>
+                        <span x-bind:class="active == 'status' ? 'nav-link active' : 'nav-link'"
+                            x-on:click="active = 'status'">Incomplete</span>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" x-bind:class="active == 'complete' ? 'nav-link active' : 'nav-link'"
-                            x-on:click="active = 'complete'" href="#">Complete</a>
+                        <span x-bind:class="active == 'complete' ? 'nav-link active' : 'nav-link'"
+                            x-on:click="active = 'complete'">Complete</span>
+                    </li>
+                </ul>
+            </div>
+            <div class="col-2">
+                <ul class="nav nav-tabs justify-content-end">
+                    <li class="nav-item">
+                        <span x-bind:class="active == 'new' ? 'nav-link active' : 'nav-link'"
+                            x-on:click="active = 'new'">New ToDo</span>
                     </li>
                 </ul>
             </div>
@@ -34,40 +44,41 @@
 
 
         <div class="row">
-            {{range $index, $value := .todos}}
-            <div class="col-3 box" x-show="'{{.Status}}' == active">
-                <div class="card col-12" style="width: 18rem;" data-toggle="modal" data-target="#todoModal"
-                    onclick="displayModal({{$index}})" id="card-{{.ID}}">
-                    <div class="card-body">
-                        <h5 class="card-title">{{ .Task }}</h5>
-                        <h6 class="card-subtitle mb-2 text-muted">{{ .Status }}</h6>
-                        <p class="card-text">{{ .Assignment }}</p>
+            <template x-for="(card, index) in showCards" x-show="active == 'status' || active == 'complete'">
+                <div class="col-3 box" x-show="card.status == active" x-transition:enter.delay.100ms>
+                    <div class="card col-12" style="width: 18rem;" data-toggle="modal" data-target="#todoModal"
+                        x-on:click="displayModal(showCards[index], index)" x-bind:id="'card-' + card.ID">
+                        <div class="card-body">
+                            <h5 class="card-title" x-text="card.task"></h5>
+                            <h6 class="card-subtitle mb-2 text-muted" x-text="card.status"></h6>
+                            <p class="card-text" x-text="card.assignment"></p>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+
+        <!-- Modal -->
+        <div class="modal fade" id="todoModal" tabindex="-1" aria-labelledby="todoModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="todoModalLabel"></h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" onclick="deleteCard()">Delete</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close"
+                            onclick="invertStatus()">Mark as Complete</button>
                     </div>
                 </div>
             </div>
-            {{end}}
         </div>
-    </div>
-
-    <!-- Modal -->
-    <div class="modal fade" id="todoModal" tabindex="-1" aria-labelledby="todoModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="todoModalLabel"></h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-danger" onclick="deleteCard()">Delete</button>
-                    <button type="button" class="btn btn-primary" onclick="invertStatus()">Mark as Complete</button>
-                </div>
-            </div>
-        </div>
-    </div>
 </body>
 
 
@@ -80,21 +91,29 @@
 
 <script>
     let focusID;
+    let focusIdx;
+    let cards = {{
+        .todos
+    }}
 
-    function displayModal(idx) {
-        var cards = {{
-            .todos
-    }};
-    let card = cards[idx]
-    focusID = card.ID
-    console.log(card)
-    $("#todoModal .modal-title").text(card.task + " (" + card.ID + ")");
-    $("#todoModal .modal-body").text(card.assignment);
-    $("#todoModal .modal-dialog").css("border", card.status == "status" ? "3px solid red" : "3px solid green")
-    
+    function initCards() {
+        let cards = {{
+        .todos
+    }}
+    return cards
+    }
+
+    function displayModal(card, idx) {
+        focusIdx = idx
+        focusID = card.ID
+        $("#todoModal .modal-title").text(card.task + " (" + card.ID + ")")
+        $("#todoModal .modal-body").text(card.assignment)
+        $("#todoModal .modal-dialog").css("border", card.status == "status" ? "3px solid red" : "3px solid green")
+
     }
 
     function invertStatus() {
+        let newStatus = cards[focusIdx].status == "status" ? "complete" : "status"
         fetch(`/api/ToDo/${focusID}`, {
             method: "PATCH",
             headers: {
@@ -102,15 +121,19 @@
             },
             body: JSON.stringify(
                 {
-                    "status": "complete"
+                    "status": newStatus
                 }
             )
+        }).then(response => {
+            let event = new CustomEvent("items-load", {
+                detail: {
+                    focusIdx: focusIdx,
+                    newStatus: newStatus
+                }
+            });
+            window.dispatchEvent(event);
         })
-        //.then(response => response.json())
-        //.then(json => {
-        //  likesContainer.innerText = `${json.likes} likes`;
-        //});
-    }
+    };
 
     function deleteCard() {
         document.getElementById(`card-${focusID}`).remove()
