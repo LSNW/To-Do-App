@@ -16,9 +16,7 @@
         Your User ID is {{.user_id}}
     </div>
 
-    <div class="container" x-data="{showCards: initCards()}" x-on:items-load.window="showCards[$event.detail.focusIdx].status = $event.detail.newStatus;
-        cards = showCards">
-
+    <div class="container" x-data="{showCards: initCards()}" x-on:deck-change.window="$event.detail.modify(showCards)">
         <div class="row">
             <div class="col-10">
                 <ul class="nav nav-tabs">
@@ -59,26 +57,39 @@
         </div>
 
 
-        <!-- Modal -->
-        <div class="modal fade" id="todoModal" tabindex="-1" aria-labelledby="todoModalLabel" aria-hidden="true">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="todoModalLabel"></h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-                    <div class="modal-body">
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-danger" onclick="deleteCard()">Delete</button>
-                        <button type="button" class="btn btn-primary" data-dismiss="modal" aria-label="Close"
-                            onclick="invertStatus()">Mark as Complete</button>
-                    </div>
+        <div x-show="active == 'new'">
+            <h2 x-show="active == 'new'">Create a New ToDo</h2>
+            <form id="createToDo" onsubmit="createCard(event); return false">
+                <label for="task">Task:</label><br>
+                <input type="text" name="task"><br>
+                <label for="assignment">Assignment:</label><br>
+                <textarea name="assignment" form="createToDo"></textarea><br>
+                <button>Create</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="todoModal" tabindex="-1" aria-labelledby="todoModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="todoModalLabel"></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" data-dismiss="modal"
+                        onclick="deleteCard()">Delete</button>
+                    <button class="btn btn-primary" data-dismiss="modal" aria-label="Close"
+                        onclick="invertStatus()">Mark as Complete</button>
                 </div>
             </div>
         </div>
+    </div>
 </body>
 
 
@@ -92,14 +103,14 @@
 <script>
     let focusID;
     let focusIdx;
-    let cards = {{
-        .todos
-    }}
 
     function initCards() {
         let cards = {{
         .todos
     }}
+    window.model = {
+        'cards': cards
+    }
     return cards
     }
 
@@ -112,8 +123,40 @@
 
     }
 
+    function createCard(event) {
+        console.log(window.model.cards[0])
+        let formData = event.target.elements;
+        console.log(formData)
+        fetch("/api/ToDo/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(
+                {
+                    "task": formData.task.value,
+                    "assignment": formData.assignment.value,
+                    "status": "status",
+                    "delete": "delete"
+                }
+            )
+        })
+            .then(response => response.json())
+            .then(data => {
+                let event = new CustomEvent("deck-change", {
+                    detail: {
+                        modify: (cards) => {
+                            cards.push(data)
+                        }
+                    }
+                })
+                window.dispatchEvent(event);
+            })
+    }
+
     function invertStatus() {
-        let newStatus = cards[focusIdx].status == "status" ? "complete" : "status"
+        let oldStatus = window.model.cards[focusIdx].status
+        let newStatus = oldStatus == "status" ? "complete" : "status"
         fetch(`/api/ToDo/${focusID}`, {
             method: "PATCH",
             headers: {
@@ -125,18 +168,30 @@
                 }
             )
         }).then(response => {
-            let event = new CustomEvent("items-load", {
+            let event = new CustomEvent("deck-change", {
                 detail: {
-                    focusIdx: focusIdx,
-                    newStatus: newStatus
+                    modify: (cards) => {
+                        cards[focusIdx].status = newStatus
+                    }
                 }
-            });
+            })
             window.dispatchEvent(event);
         })
-    };
+    }
 
     function deleteCard() {
-        document.getElementById(`card-${focusID}`).remove()
+        fetch(`/api/ToDo/${focusID}`, {
+            method: "DELETE",
+        }).then(response => {
+            let event = new CustomEvent("deck-change", {
+                detail: {
+                    modify: (cards) => {
+                        cards.splice(focusIdx, 1)
+                    }
+                }
+            })
+            window.dispatchEvent(event);
+        })
     }
 </script>
 
