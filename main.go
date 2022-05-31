@@ -26,7 +26,7 @@ func main() {
 	app.Post("/login/auth", controllers.Authenticate)
 	//app.Get("/login", controllers.AutoLogin)
 
-	// this landing page is for testing session authenticity
+	// this is the homepage
 	app.Get("/", controllers.Landing)
 
 	// User REST API
@@ -35,11 +35,11 @@ func main() {
 
 
 	// ToDo REST API
-	//app.Post("/api/ToDo/", controllers.CreateToDo)
+	app.Post("/api/ToDo/", controllers.CreateToDo)
 	//app.Get("/api/ToDo/all", controllers.GetToDo)
 	app.Get("/api/ToDo/:id", controllers.FindToDo)
 	app.Patch("/api/ToDo/:id", controllers.UpdateToDo)
-	//app.Delete("/api/ToDo/:id", controllers.DeleteToDo)
+	app.Delete("/api/ToDo/:id", controllers.DeleteToDo)
 
   	app.Listen(":3000")
 }
