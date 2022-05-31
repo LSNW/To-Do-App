@@ -6,14 +6,24 @@
   border-radius: 5px;
 }
 
+.nav-item {
+  cursor: pointer;
+}
+
 .card {
   border-radius: 10px;
   border: 1px solid black;
   transition: all 0.1s ease-in-out;
+  cursor: pointer;
 }
 
 .card:hover {
-  color: red;
-  border: 1px solid red;
+  color: blue;
+  border: 1px solid blue;
   transform: scale(1.05);
+}
+
+.nav {
+  margin-bottom: 5px;
+  font-size: 20x;
 }

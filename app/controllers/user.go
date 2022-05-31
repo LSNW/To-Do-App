@@ -11,7 +11,7 @@ import (
 	"ToDoApp/app/storage"
 )
 
-var expirationTime = 15 * time.Minute
+var expirationTime = 60 * time.Minute
 
 func resetCookieExpiration(c *fiber.Ctx) {
 	cookie := new(fiber.Cookie)
