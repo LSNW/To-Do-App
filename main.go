@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/template/html"
-	//"fmt
 
 	"ToDoApp/app/models"
 	"ToDoApp/app/controllers"
@@ -24,9 +23,8 @@ func main() {
 	// Logins
 	app.Get("/login", controllers.Login)
 	app.Post("/login/auth", controllers.Authenticate)
-	//app.Get("/login", controllers.AutoLogin)
 
-	// this is the homepage
+	// Homepage
 	app.Get("/", controllers.Landing)
 
 	// User REST API
