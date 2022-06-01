@@ -57,7 +57,7 @@
         </div>
 
 
-        <div x-show="active == 'new'">
+        <div x-show="active == 'new'" x-transition:enter.delay.100ms>
             <h2 x-show="active == 'new'">Create a New ToDo</h2>
             <form id="createToDo" onsubmit="createCard(event); return false">
                 <label for="task">Task:</label><br>
