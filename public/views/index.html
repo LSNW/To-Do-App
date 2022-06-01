@@ -11,7 +11,7 @@
 
 
 
-<body x-data="{active: 'status'}">
+<body x-data="{active: 'incomplete'}">
     <div class="alert alert-primary" role="alert">
         Your User ID is {{.user_id}}
     </div>
@@ -21,8 +21,8 @@
             <div class="col-10">
                 <ul class="nav nav-tabs">
                     <li class="nav-item">
-                        <span x-bind:class="active == 'status' ? 'nav-link active' : 'nav-link'"
-                            x-on:click="active = 'status'">Incomplete</span>
+                        <span x-bind:class="active == 'incomplete' ? 'nav-link active' : 'nav-link'"
+                            x-on:click="active = 'incomplete'">Incomplete</span>
                     </li>
                     <li class="nav-item">
                         <span x-bind:class="active == 'complete' ? 'nav-link active' : 'nav-link'"
@@ -42,13 +42,14 @@
 
 
         <div class="row">
-            <template x-for="(card, index) in showCards" x-show="active == 'status' || active == 'complete'">
+            <template x-for="(card, index) in showCards" x-show="active == 'incomplete' || active == 'complete'">
                 <div class="col-3 box" x-show="card.status == active" x-transition:enter.delay.100ms>
                     <div class="card col-12" style="width: 18rem;" data-toggle="modal" data-target="#todoModal"
                         x-on:click="displayModal(showCards[index], index)" x-bind:id="'card-' + card.ID">
                         <div class="card-body">
                             <h5 class="card-title" x-text="card.task"></h5>
-                            <h6 class="card-subtitle mb-2 text-muted" x-text="card.status"></h6>
+                            <h6 class="card-subtitle mb-2 text-muted"
+                                x-text="card.status == 'incomplete' ? 'Incomplete' : 'Complete'"></h6>
                             <p class="card-text" x-text="card.assignment"></p>
                         </div>
                     </div>
@@ -129,7 +130,7 @@
         $("#todoModal .modal-title").text(card.task)
         $("#todoModal .id-title").text("(" + card.ID + ")")
         $("#todoModal .modal-body").text(card.assignment)
-        $("#todoModal .modal-dialog").css("border", card.status == "status" ? "3px solid red" : "3px solid green")
+        $("#todoModal .modal-dialog").css("border", card.status == "incomplete" ? "3px solid red" : "3px solid green")
 
     }
 
@@ -144,7 +145,7 @@
                 {
                     "task": formData.task.value,
                     "assignment": formData.assignment.value,
-                    "status": "status",
+                    "status": "incomplete",
                     "delete": "delete"
                 }
             )
@@ -164,7 +165,7 @@
 
     function invertStatus() {
         let oldStatus = window.model.cards[focusIdx].status
-        let newStatus = oldStatus == "status" ? "complete" : "status"
+        let newStatus = oldStatus == "incomplete" ? "complete" : "incomplete"
         fetch(`/api/ToDo/${focusID}`, {
             method: "PATCH",
             headers: {
