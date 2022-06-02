@@ -4,30 +4,18 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/alexedwards/argon2id"
 	"github.com/jinzhu/copier"
-	"time"
 	"strconv"
+	"log"
 
 	"ToDoApp/app/models"
 	"ToDoApp/app/storage"
 )
 
-var expirationTime = 60 * time.Minute
-
-func resetCookieExpiration(c *fiber.Ctx) {
-	cookie := new(fiber.Cookie)
-	cookie.Name = "session_id"
-	cookie.Value = c.Cookies("session_id")
-	cookie.Expires = time.Now().Add(expirationTime)
-	c.Cookie(cookie)
-}
-
 func getToDo(c *fiber.Ctx) []models.ToDo {
 	var todos []models.ToDo
 	sess, err := storage.Store.Get(c)
 	if err != nil {
-		panic(err)
-	} else if c.Cookies("session_id") != sess.ID() {
-		//return c.SendStatus(401)
+		log.Println(err)
 	}
 	storage.DB.Where(&models.ToDo{UserID: sess.Get("user_id").(uint)}).Order("id asc").Find(&todos)
 	
@@ -56,20 +44,23 @@ func Authenticate(c *fiber.Ctx) error {
 			"error": "Incorrect username or password",
 		})
 	} else if err != nil {
-		return err
+		log.Println(err)
+		return c.SendStatus(500)
 	} 
 
 	var responseUser models.UserResponse
 	copier.Copy(&responseUser, &existsUser)
 	sess, err := storage.Store.Get(c)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return c.SendStatus(500)
 	}
 	sess.Regenerate()
 	defer func() {
 		sess.Set("user_id", responseUser.ID)
 		if err := sess.Save(); err != nil {
-			panic(err)
+			log.Println(err)
+			//return c.SendStatus(500)
 		}
 	}()
 
@@ -79,13 +70,15 @@ func Authenticate(c *fiber.Ctx) error {
 func AutoLogin(c *fiber.Ctx) error {
 	sess, err := storage.Store.Get(c)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return c.SendStatus(500)
 	}
 	sess.Regenerate()
 	defer func() {
 		sess.Set("user_id", uint(154)) // 154 is just a random user id
 		if err := sess.Save(); err != nil {
-			panic(err)
+			log.Println(err)
+			//return c.SendStatus(500)
 		}
 	}()
 
@@ -95,12 +88,12 @@ func AutoLogin(c *fiber.Ctx) error {
 func Landing(c *fiber.Ctx) error {
 	sess, err := storage.Store.Get(c)
 	if err != nil {
-		panic(err)
+		log.Println(err)
+		return c.SendStatus(500)
 	}
 	if c.Cookies("session_id") != sess.ID() {
-		return c.SendStatus(401)
+		return c.Redirect("/login")
 	}
-	resetCookieExpiration(c)
 	return c.Render("index", fiber.Map{
 		"user_id": strconv.Itoa(int(sess.Get("user_id").(uint))),
 		"todos": getToDo(c),
@@ -110,7 +103,8 @@ func Landing(c *fiber.Ctx) error {
 func CreateUser(c *fiber.Ctx) error {
 	var user models.User
 	if err := c.BodyParser(&user); err != nil {
-		return err
+		log.Println(err)
+		return c.SendStatus(500)
 	}
 	// separation is for debug
 	if user.Login == "" || user.Password == "" {
@@ -121,7 +115,8 @@ func CreateUser(c *fiber.Ctx) error {
 	hash, err := argon2id.CreateHash(user.Password, argon2id.DefaultParams)
 	user.Password = hash
 	if err != nil {
-		return err
+		log.Println(err)
+		return c.SendStatus(500)
 	}
 	storage.DB.Create(&models.User{Login: user.Login, Password:user.Password})
 	return c.SendString("Successfully created user profile for  " + user.Login)
