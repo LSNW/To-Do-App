@@ -13,7 +13,7 @@
 
 <body x-data="{active: 'incomplete'}">
     <div class="alert alert-primary" role="alert">
-        Your User ID is {{.user_id}}
+        Hello {{.login}}
     </div>
 
     <div class="container" x-data="{showCards: initCards()}" x-on:deck-change.window="$event.detail.modify(showCards)">
@@ -89,8 +89,8 @@
                         onclick="updateCard()">Save Changes</button>
                     <button type="button" class="btn btn-danger" data-dismiss="modal"
                         onclick="deleteCard()">Delete</button>
-                    <button class="btn btn-primary" data-dismiss="modal" aria-label="Close"
-                        onclick="invertStatus()">Mark as Complete</button>
+                    <button class="btn btn-primary" id="statusInvert" data-dismiss="modal" aria-label="Close"
+                        onclick="invertStatus()"></button>
                 </div>
             </div>
         </div>
@@ -131,6 +131,7 @@
         $("#todoModal .id-title").text("(" + card.ID + ")")
         $("#todoModal .modal-body").text(card.assignment)
         $("#todoModal .modal-dialog").css("border", card.status == "incomplete" ? "3px solid red" : "3px solid green")
+        $("#todoModal #statusInvert").text("Mark as ".concat(card.status == "incomplete" ? "complete" : "incomplete"))
 
     }
 
