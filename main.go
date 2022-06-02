@@ -21,7 +21,7 @@ func main() {
 	storage.DB.AutoMigrate(&models.User{}, &models.ToDo{})
 
 	// Logins
-	app.Get("/login", controllers.Login)
+	app.Get("/login", controllers.Login).Name("login")
 	app.Post("/login/auth", controllers.Authenticate)
 
 	// Homepage

@@ -150,7 +150,12 @@
                 }
             )
         })
-            .then(response => response.json())
+            .then(response => {
+                if (response.status >= 400) {
+                    throw new Error(response.statusText)
+                }
+                return response.json()
+            })
             .then(data => {
                 let event = new CustomEvent("deck-change", {
                     detail: {
@@ -160,6 +165,14 @@
                     }
                 })
                 window.dispatchEvent(event);
+            })
+            .catch(error => {
+                if (error == "Error: Unauthorized") {
+                    location.href = "/login"
+                    alert("Session timed out, please log in again")
+                } else {
+                    alert(error)
+                }
             })
     }
 
@@ -177,15 +190,29 @@
                 }
             )
         }).then(response => {
-            let event = new CustomEvent("deck-change", {
-                detail: {
-                    modify: (cards) => {
-                        cards[focusIdx].status = newStatus
+            if (response.status >= 400) {
+                throw new Error(response.statusText)
+            }
+            return response.json()
+        })
+            .then(data => {
+                let event = new CustomEvent("deck-change", {
+                    detail: {
+                        modify: (cards) => {
+                            cards[focusIdx].status = newStatus
+                        }
                     }
+                })
+                window.dispatchEvent(event);
+            })
+            .catch(error => {
+                if (error == "Error: Unauthorized") {
+                    location.href = "/login"
+                    alert("Session timed out, please log in again")
+                } else {
+                    alert(error)
                 }
             })
-            window.dispatchEvent(event);
-        })
     }
 
     function updateCard() {
@@ -203,7 +230,12 @@
                 }
             )
         })
-            .then(response => response.json())
+            .then(response => {
+                if (response.status >= 400) {
+                    throw new Error(response.statusText)
+                }
+                return response.json()
+            })
             .then(data => {
                 let event = new CustomEvent("deck-change", {
                     detail: {
@@ -214,21 +246,41 @@
                 })
                 window.dispatchEvent(event);
             })
+            .catch(error => {
+                if (error == "Error: Unauthorized") {
+                    location.href = "/login"
+                    alert("Session timed out, please log in again")
+                } else {
+                    alert(error)
+                }
+            })
     }
 
     function deleteCard() {
         fetch(`/api/ToDo/${focusID}`, {
             method: "DELETE",
-        }).then(response => {
-            let event = new CustomEvent("deck-change", {
-                detail: {
-                    modify: (cards) => {
-                        cards.splice(focusIdx, 1)
+        })
+            .then(response => {
+                if (response.status >= 400) {
+                    throw new Error(response.statusText)
+                }
+                let event = new CustomEvent("deck-change", {
+                    detail: {
+                        modify: (cards) => {
+                            cards.splice(focusIdx, 1)
+                        }
                     }
+                })
+                window.dispatchEvent(event);
+            })
+            .catch(error => {
+                if (error == "Error: Unauthorized") {
+                    location.href = "/login"
+                    alert("Session timed out, please log in again")
+                } else {
+                    alert(error)
                 }
             })
-            window.dispatchEvent(event);
-        })
     }
 </script>
 
