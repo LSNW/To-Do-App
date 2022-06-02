@@ -58,6 +58,7 @@ func Authenticate(c *fiber.Ctx) error {
 	sess.Regenerate()
 	defer func() {
 		sess.Set("user_id", responseUser.ID)
+		sess.Set("login", responseUser.Login)
 		if err := sess.Save(); err != nil {
 			log.Println(err)
 			//return c.SendStatus(500)
@@ -96,6 +97,7 @@ func Landing(c *fiber.Ctx) error {
 	}
 	return c.Render("index", fiber.Map{
 		"user_id": strconv.Itoa(int(sess.Get("user_id").(uint))),
+		"login": sess.Get("login"),
 		"todos": getToDo(c),
 	})
 }
