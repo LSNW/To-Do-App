@@ -11,6 +11,8 @@ import (
 	"ToDoApp/app/storage"
 )
 
+var message string
+
 func getToDo(c *fiber.Ctx) []models.ToDo {
 	var todos []models.ToDo
 	sess, err := storage.Store.Get(c)
@@ -22,8 +24,22 @@ func getToDo(c *fiber.Ctx) []models.ToDo {
 	return todos
 }
 
+func SignUp(c *fiber.Ctx) error {
+	defer func () {
+		message = ""
+	}()
+	return c.Render("signup", fiber.Map {
+		"error": message,
+	})
+}
+
 func Login(c *fiber.Ctx) error {
-	return c.Render("login", nil)
+	defer func () {
+		message = ""
+	}()
+	return c.Render("login", fiber.Map {
+		"error": message,
+	})
 }
 
 func Authenticate(c *fiber.Ctx) error {
@@ -33,16 +49,14 @@ func Authenticate(c *fiber.Ctx) error {
 	result := storage.DB.Last(&existsUser, "login = ?", attemptedUser.Login)
 
 	if attemptedUser.Login == "" || attemptedUser.Password == "" {
-		return c.Render("login", fiber.Map {
-			"error": "Please enter a username and password",
-		})
+		message = "Please enter a username and password"
+		return c.Redirect("/login")
 	}
 
 	match, err := argon2id.ComparePasswordAndHash(attemptedUser.Password, existsUser.Password)
 	if !match || result.RowsAffected == 0 {
-		return c.Render("login", fiber.Map {
-			"error": "Incorrect username or password",
-		})
+		message = "Incorrect username or password"
+		return c.Redirect("/login")
 	} else if err != nil {
 		log.Println(err)
 		return c.SendStatus(500)
@@ -103,16 +117,14 @@ func Landing(c *fiber.Ctx) error {
 }
 
 func CreateUser(c *fiber.Ctx) error {
-	var user models.User
-	if err := c.BodyParser(&user); err != nil {
-		log.Println(err)
-		return c.SendStatus(500)
-	}
+	user := models.User{Login:c.FormValue("login"), Password:c.FormValue("password")}
+
 	// separation is for debug
 	if user.Login == "" || user.Password == "" {
 		return c.SendString("Please enter a login and password")
 	} else if storage.DB.Last(&user, "login = ?", user.Login).RowsAffected > 0 {
-		return c.SendString("Login already exists")
+		message = "Login already exists"
+		return c.Redirect("/signup")
 	}
 	hash, err := argon2id.CreateHash(user.Password, argon2id.DefaultParams)
 	user.Password = hash
@@ -121,7 +133,7 @@ func CreateUser(c *fiber.Ctx) error {
 		return c.SendStatus(500)
 	}
 	storage.DB.Create(&models.User{Login: user.Login, Password:user.Password})
-	return c.SendString("Successfully created user profile for  " + user.Login)
+	return c.Redirect("/login")
 }
 
 func FindUser(c *fiber.Ctx) error {
