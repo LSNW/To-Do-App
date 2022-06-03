@@ -78,7 +78,6 @@
                 <div class="modal-header">
                     <h5 class="modal-title" id="todoModalLabel" contenteditable="true" oninput="revealSaveButton()">
                     </h5>
-                    <h5 class="id-title"></h5>
                     <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
@@ -129,7 +128,6 @@
         focusID = card.ID
         document.getElementById("saveUpdate").style.display = "none"
         $("#todoModal .modal-title").text(card.task)
-        $("#todoModal .id-title").text("(" + card.ID + ")")
         $("#todoModal .modal-body").text(card.assignment)
         $("#todoModal .modal-dialog").css("border", card.status == "incomplete" ? "3px solid red" : "3px solid green")
         $("#todoModal #statusInvert").text("Mark as ".concat(card.status == "incomplete" ? "complete" : "incomplete"))

@@ -75,7 +75,6 @@ func Authenticate(c *fiber.Ctx) error {
 		sess.Set("login", responseUser.Login)
 		if err := sess.Save(); err != nil {
 			log.Println(err)
-			//return c.SendStatus(500)
 		}
 	}()
 
@@ -113,7 +112,6 @@ func Landing(c *fiber.Ctx) error {
 func CreateUser(c *fiber.Ctx) error {
 	user := models.User{Login:c.FormValue("login"), Password:c.FormValue("password")}
 
-	// separation is for debug
 	if user.Login == "" || user.Password == "" {
 		return c.SendString("Please enter a login and password")
 	} else if storage.DB.Last(&user, "login = ?", user.Login).RowsAffected > 0 {
