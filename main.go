@@ -23,6 +23,7 @@ func main() {
 	// Logins
 	app.Get("/signup", controllers.SignUp)
 	app.Get("/login", controllers.Login)
+	app.Get("/signout", controllers.Signout)
 	app.Post("/login/auth", controllers.Authenticate)
 
 	// Homepage

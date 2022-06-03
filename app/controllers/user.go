@@ -82,22 +82,16 @@ func Authenticate(c *fiber.Ctx) error {
 	return c.Redirect("/")
 }
 
-func AutoLogin(c *fiber.Ctx) error {
+func Signout(c *fiber.Ctx) error {
 	sess, err := storage.Store.Get(c)
 	if err != nil {
 		log.Println(err)
 		return c.SendStatus(500)
 	}
-	sess.Regenerate()
-	defer func() {
-		sess.Set("user_id", uint(154)) // 154 is just a random user id
-		if err := sess.Save(); err != nil {
-			log.Println(err)
-			//return c.SendStatus(500)
-		}
-	}()
-
-	return c.SendString("You are now \"logged in\"")
+	if err := sess.Destroy(); err != nil {
+		log.Println(err)
+	}
+	return c.Redirect("/login")
 }
 
 func Landing(c *fiber.Ctx) error {
