@@ -16,7 +16,7 @@ func InitDatabase() {
 	var err error
 	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("")
+		panic(err)
 	}
 }
 
