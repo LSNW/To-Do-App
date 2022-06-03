@@ -14,9 +14,10 @@
 <body x-data="{active: 'incomplete'}">
     <div class="alert alert-primary" role="alert">
         Hello {{.login}}
+        <a href="/signout" style="float:right;">Sign out</a>
     </div>
 
-    <div class="container" x-data="{showCards: initCards()}" x-on:deck-change.window="$event.detail.modify(showCards)">
+    <div class=" container" x-data="{showCards: initCards()}" x-on:deck-change.window="$event.detail.modify(showCards)">
         <div class="row">
             <div class="col-10">
                 <ul class="nav nav-tabs">
