@@ -59,15 +59,27 @@
         </div>
 
 
-        <div x-show="active == 'new'" x-transition:enter.delay.100ms>
-            <h2 x-show="active == 'new'">Create a New ToDo</h2>
-            <form id="createToDo" onsubmit="createCard(event); return false">
-                <label for="task">Task:</label><br>
-                <input type="text" name="task"><br>
-                <label for="assignment">Assignment:</label><br>
-                <textarea name="assignment" form="createToDo"></textarea><br>
-                <button>Create</button>
-            </form>
+        <div class="row" x-show="active == 'new'" x-transition:enter.delay.100ms>
+            <div class="col-12">
+                <h2 x-show="active == 'new'">Create a New ToDo</h2>
+                <form class="needs-validation" id="createToDo" onsubmit="createCard(event); return false" novalidate>
+                    <div>
+                        <label for="task">Task:</label><br>
+                        <input type="text" name="task" required><br>
+                        <div class="invalid-feedback">
+                            Please enter a task.
+                        </div>
+                    </div>
+                    <div>
+                        <label for="assignment">Assignment:</label><br>
+                        <textarea name="assignment" form="createToDo" required></textarea><br>
+                        <div class="invalid-feedback">
+                            Please enter an assignment.
+                        </div>
+                    </div>
+                    <button class="btn btn-primary">Create</button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -136,6 +148,10 @@
 
     function createCard(event) {
         let formData = event.target.elements;
+        if (formData.task.value == "" || formData.assignment.value == ""
+        ) {
+            return
+        }
         fetch("/api/ToDo/", {
             method: "POST",
             headers: {
@@ -165,6 +181,7 @@
                     }
                 })
                 window.dispatchEvent(event);
+                alert("Succesfully created!")
             })
             .catch(error => {
                 if (error == "Error: Unauthorized") {
@@ -282,6 +299,26 @@
                 }
             })
     }
+
+    (function () {
+        'use strict'
+
+        // Fetch all the forms we want to apply custom Bootstrap validation styles to
+        var forms = document.querySelectorAll('.needs-validation')
+
+        // Loop over them and prevent submission
+        Array.prototype.slice.call(forms)
+            .forEach(function (form) {
+                form.addEventListener('submit', function (event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault()
+                        event.stopPropagation()
+                    }
+
+                    form.classList.add('was-validated')
+                }, false)
+            })
+    })()
 </script>
 
 </html>
