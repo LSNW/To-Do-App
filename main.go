@@ -9,8 +9,7 @@ import (
 	"ToDoApp/app/storage"
 )
 
-
-func main() {
+func initApp() *fiber.App {
 	engine := html.New("./public/views", ".html")
     app := fiber.New(fiber.Config{
         Views: engine,
@@ -40,5 +39,13 @@ func main() {
 	app.Patch("/api/ToDo/:id", controllers.UpdateToDo)
 	app.Delete("/api/ToDo/:id", controllers.DeleteToDo)
 
+
   	app.Listen(":3000")
+
+	return app
+}
+
+func main() {
+	app := initApp()
+	_ = app
 }
