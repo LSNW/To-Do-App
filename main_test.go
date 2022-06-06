@@ -15,6 +15,73 @@ import (
 
 var app = initApp()
 
+
+func TestIndexRoute(t *testing.T) {
+	tests := []struct {
+		description string
+
+		route string
+
+		expectedError bool
+		expectedCode  int
+	}{
+		{
+			description:   "index route",
+			route:         "/",
+			expectedError: false,
+			expectedCode:  302,
+		},
+		{
+			description:   "todo api find",
+			route:         "/api/todo/1",
+			expectedError: false,
+			expectedCode:  401,
+		},
+		{
+			description:   "todo api update",
+			route:         "/api/todo/1",
+			expectedError: false,
+			expectedCode:  401,
+		},
+		{
+			description:   "todo api delete",
+			route:         "/api/todo/1",
+			expectedError: false,
+			expectedCode:  401,
+		},
+		{
+			description:   "signout",
+			route:         "/signout",
+			expectedError: false,
+			expectedCode:  302,
+		},
+		{
+			description:   "signup",
+			route:         "/signup",
+			expectedError: false,
+			expectedCode:  200,
+		},
+	}
+
+	for _, test := range tests {
+		req, _ := http.NewRequest(
+			"GET",
+			test.route,
+			nil,
+		)
+
+		res, err := app.Test(req, -1)
+
+		assert.Equalf(t, test.expectedError, err != nil, test.description)
+		if test.expectedError {
+			continue
+		}
+
+		// Verify if the status code is as expected
+		assert.Equalf(t, test.expectedCode, res.StatusCode, test.description)
+	}
+} 
+
 func TestInvalidLogin(t *testing.T) {
 	data := url.Values{}
 	data.Set("login", "non")
